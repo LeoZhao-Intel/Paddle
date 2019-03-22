@@ -95,6 +95,9 @@ class LayerNormOpMaker : public framework::OpProtoAndCheckerMaker {
           PADDLE_ENFORCE_GT(begin_norm_axis, 0,
                             "'begin_norm_axis' should be greater than zero.");
         });
+    AddAttr<bool>(framework::kAllKernelsMustComputeRuntimeShape,
+                  "Skip calling InferShape() function in the runtime.")
+        .SetDefault(true);
 
     AddComment(R"DOC(
 Assume feature vectors exist on dimensions

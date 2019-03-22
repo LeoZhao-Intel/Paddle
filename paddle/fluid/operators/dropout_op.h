@@ -23,6 +23,7 @@ namespace paddle {
 namespace operators {
 
 using Tensor = framework::Tensor;
+using LoDTensor = framework::LoDTensor;
 template <typename T, int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
 using EigenMatrix = framework::EigenMatrix<T, MajorType, IndexType>;
@@ -31,9 +32,13 @@ template <typename DeviceContext, typename T>
 class CPUDropoutKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& context) const override {
-    auto* x = context.Input<Tensor>("X");
-    auto* y = context.Output<Tensor>("Out");
+    auto* x = context.Input<LoDTensor>("X");
+    auto* y = context.Output<LoDTensor>("Out");
     const auto* x_data = x->data<T>();
+
+    y->Resize(x->dims());
+    y->set_lod(x->lod());
+    y->set_layout(x->layout());
     auto* y_data = y->mutable_data<T>(context.GetPlace());
     float dropout_prob = context.Attr<float>("dropout_prob");
 
@@ -41,6 +46,7 @@ class CPUDropoutKernel : public framework::OpKernel<T> {
         context.Attr<std::string>("dropout_implementation");
     if (!context.Attr<bool>("is_test")) {
       auto* mask = context.Output<Tensor>("Mask");
+      mask->Resize(x->dims());
       auto* mask_data = mask->mutable_data<T>(context.GetPlace());
 
       // NOTE: fixed seed should only be used in unittest or for debug.

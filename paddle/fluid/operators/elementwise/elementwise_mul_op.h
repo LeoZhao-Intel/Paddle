@@ -86,6 +86,9 @@ class ElementwiseMulKernel : public framework::OpKernel<T> {
                    framework::ToTypeName(x_var->Type()));
     }
 
+    z->Resize(x.dims());
+    //    z->set_lod(x.lod());
+    z->set_layout(x.layout());
     z->mutable_data<T>(ctx.GetPlace());
     if (x.numel() == y->numel()) {
       elementwise_mul<DeviceContext, T>(ctx, &x, y, z);

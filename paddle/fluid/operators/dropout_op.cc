@@ -85,6 +85,9 @@ class DropoutOpMaker : public framework::OpProtoAndCheckerMaker {
               "dropout_implementation can only be downgrade_in_infer or "
               "upscale_in_train");
         });
+    AddAttr<bool>(framework::kAllKernelsMustComputeRuntimeShape,
+                  "Skip calling InferShape() function in the runtime.")
+        .SetDefault(true);
 
     AddComment(R"DOC(
 Dropout Operator.

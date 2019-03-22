@@ -23,6 +23,7 @@ namespace operators {
 
 using framework::DataLayout;
 using framework::Tensor;
+using framework::LoDTensor;
 using mkldnn::memory;
 using mkldnn::reorder;
 using mkldnn::primitive;
@@ -37,11 +38,15 @@ class EltwiseAddMKLDNNKernel : public framework::OpKernel<T> {
         ctx.template device_context<paddle::platform::MKLDNNDeviceContext>();
     const auto& mkldnn_engine = dev_ctx.GetEngine();
 
-    auto* x = ctx.Input<Tensor>("X");
-    auto* y = ctx.Input<Tensor>("Y");
-    auto* z = ctx.Output<Tensor>("Out");
+    auto* x = ctx.Input<LoDTensor>("X");
+    auto* y = ctx.Input<LoDTensor>("Y");
+    auto* z = ctx.Output<LoDTensor>("Out");
     const T* x_data = x->data<T>();
     const T* y_data = y->data<T>();
+
+    z->Resize(x->dims());
+    z->set_lod(x->lod());
+    z->set_layout(x->layout());
     T* z_data = z->mutable_data<T>(ctx.GetPlace());
 
     int axis = ctx.Attr<int>("axis");

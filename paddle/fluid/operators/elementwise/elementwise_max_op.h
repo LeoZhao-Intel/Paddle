@@ -33,6 +33,9 @@ class ElementwiseMaxKernel : public framework::OpKernel<T> {
     auto* y = ctx.Input<framework::LoDTensor>("Y");
     auto* z = ctx.Output<framework::LoDTensor>("Out");
 
+    z->Resize(x->dims());
+    z->set_lod(x->lod());
+    z->set_layout(x->layout());
     z->mutable_data<T>(ctx.GetPlace());
     int axis = ctx.Attr<int>("axis");
     ElementwiseComputeEx<MaxFunctor<T>, DeviceContext, T>(ctx, x, y, axis,

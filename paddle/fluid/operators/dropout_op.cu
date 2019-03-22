@@ -66,8 +66,11 @@ template <typename Place, typename T>
 class GPUDropoutKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& context) const override {
-    auto* x = context.Input<Tensor>("X");
-    auto* y = context.Output<Tensor>("Out");
+    auto* x = context.Input<LoDTensor>("X");
+    auto* y = context.Output<LoDTensor>("Out");
+    y->Resize(x->dims());
+    y->set_lod(x->lod());
+    y->set_layout(x->layout());
     y->mutable_data<T>(context.GetPlace());
     float dropout_prob = context.Attr<float>("dropout_prob");
 
@@ -76,6 +79,7 @@ class GPUDropoutKernel : public framework::OpKernel<T> {
     auto& place = *context.template device_context<Place>().eigen_device();
     if (!context.Attr<bool>("is_test")) {
       auto* mask = context.Output<Tensor>("Mask");
+      mask->Resize(x->dims());
       auto* mask_data = mask->mutable_data<T>(context.GetPlace());
       size_t size = framework::product(mask->dims());
       auto* x_data = x->data<T>();

@@ -172,18 +172,19 @@ class LayerNormKernel : public framework::OpKernel<T> {
     const float epsilon = ctx.Attr<float>("epsilon");
     auto* scale = ctx.Input<Tensor>("Scale");
     auto* bias = ctx.Input<Tensor>("Bias");
-    auto x = *ctx.Input<Tensor>("X");
+    auto x = *ctx.Input<LoDTensor>("X");
 
-    auto* y = ctx.Output<Tensor>("Y");
+    auto* y = ctx.Output<LoDTensor>("Y");
     auto* mean = ctx.Output<Tensor>("Mean");
     auto* var = ctx.Output<Tensor>("Variance");
     const auto begin_norm_axis = ctx.Attr<int>("begin_norm_axis");
 
     const auto x_dims = x.dims();
 
+    y->Resize(x_dims);
+    y->set_lod(x.lod());
+    y->set_layout(x.layout());
     y->mutable_data<T>(ctx.GetPlace());
-    mean->mutable_data<T>(ctx.GetPlace());
-    var->mutable_data<T>(ctx.GetPlace());
 
     auto matrix_dim = framework::flatten_to_2d(x_dims, begin_norm_axis);
     int left = static_cast<int>(matrix_dim[0]);
@@ -194,6 +195,11 @@ class LayerNormKernel : public framework::OpKernel<T> {
     Tensor out;
     out.ShareDataWith(*y);
     out.Resize(matrix_shape);
+
+    mean->Resize({left});
+    var->Resize({left});
+    mean->mutable_data<T>(ctx.GetPlace());
+    var->mutable_data<T>(ctx.GetPlace());
 
 #if defined(PADDLE_WITH_CUDA) || defined(_WIN32) || defined(__APPLE__) || \
     defined(__OSX__)

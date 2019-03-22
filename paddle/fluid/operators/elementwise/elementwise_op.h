@@ -14,7 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include "paddle/fluid/framework/data_layout.h"
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/framework/operator.h"
@@ -31,6 +33,7 @@ class ElementwiseOp : public framework::OperatorWithKernel {
   using framework::OperatorWithKernel::OperatorWithKernel;
 
   using Tensor = framework::Tensor;
+  using LoDTensor = framework::LoDTensor;
 
   void InferShape(framework::InferShapeContext *ctx) const override {
     PADDLE_ENFORCE(ctx->HasInput("X"),
@@ -118,6 +121,9 @@ class ElementwiseOpMaker : public framework::OpProtoAndCheckerMaker {
         "Defaults to \"\". Specify the data format of the output data, "
         "the input will be transformed automatically. ")
         .SetDefault("");
+    AddAttr<bool>(framework::kAllKernelsMustComputeRuntimeShape,
+                  "Skip calling InferShape() function in the runtime.")
+        .SetDefault(true);
     AddComment(string::Sprintf(R"DOC(
 Elementwise %s Operator
 
