@@ -435,9 +435,9 @@ class LayerNormKernel<platform::CUDADeviceContext, T>
     const float epsilon = ctx.Attr<float>("epsilon");
     auto *scale = ctx.Input<Tensor>("Scale");
     auto *bias = ctx.Input<Tensor>("Bias");
-    auto *x = ctx.Input<LoDTensor>("X");
+    auto *x = ctx.Input<Tensor>("X");
 
-    auto *y = ctx.Output<LoDTensor>("Y");
+    auto *y = ctx.Output<Tensor>("Y");
     auto *mean = ctx.Output<Tensor>("Mean");
     auto *var = ctx.Output<Tensor>("Variance");
     const auto begin_norm_axis = ctx.Attr<int>("begin_norm_axis");
@@ -445,8 +445,7 @@ class LayerNormKernel<platform::CUDADeviceContext, T>
     const auto x_dims = x->dims();
     auto *x_data = x->data<T>();
     y->Resize(x_dims);
-    y->set_lod(x.lod());
-    y->set_layout(x.layout());
+    ctx.ShareLoD("X", "Y");
     auto *y_data = y->mutable_data<T>(ctx.GetPlace());
     auto *scale_data = (scale == nullptr ? nullptr : scale->data<T>());
     auto *bias_data = (bias == nullptr ? nullptr : bias->data<T>());

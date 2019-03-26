@@ -79,10 +79,7 @@ class ElementwiseMulKernel : public framework::OpKernel<T> {
       out_sele->mutable_value()->mutable_data(ctx.GetPlace(), x.type());
       z = ctx.Output<framework::SelectedRows>("Out")->mutable_value();
     } else if (x_var->IsType<framework::LoDTensor>()) {
-      auto x_lod = x_var->Get<framework::LoDTensor>();
       x = x_var->Get<framework::LoDTensor>();
-      auto z_lod = ctx.Output<framework::LoDTensor>("Out");
-      z_lod->set_lod(x_lod.lod());
       z = ctx.Output<framework::LoDTensor>("Out");
     } else {
       PADDLE_THROW("X's type[%s] is not supported by elementwise_op.",
@@ -90,7 +87,7 @@ class ElementwiseMulKernel : public framework::OpKernel<T> {
     }
 
     z->Resize(x.dims());
-    z->set_layout(x.layout());
+    ctx.ShareLoD("X", "Out");
     z->mutable_data<T>(ctx.GetPlace());
     if (x.numel() == y->numel()) {
       elementwise_mul<DeviceContext, T>(ctx, &x, y, z);

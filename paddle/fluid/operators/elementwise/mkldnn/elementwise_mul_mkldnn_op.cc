@@ -33,8 +33,7 @@ using mkldnn::memory;
 using platform::StringToMKLDNNFormat;
 
 static void UpdateDataFormat(const framework::ExecutionContext& ctx,
-                             framework::LoDTensor* tensor,
-                             const char* attribute) {
+                             framework::Tensor* tensor, const char* attribute) {
   if (ctx.op().HasAttr(attribute)) {
     auto format_as_string = ctx.Attr<std::string>(attribute);
     auto format = StringToMKLDNNFormat(&format_as_string);
@@ -45,7 +44,7 @@ static void UpdateDataFormat(const framework::ExecutionContext& ctx,
 }
 
 template <typename T>
-static void ReorderInput(framework::LoDTensor* tensor,
+static void ReorderInput(framework::Tensor* tensor,
                          const platform::Place& place,
                          const mkldnn::engine& engine, bool isFourDim) {
   using platform::to_void_cast;
@@ -68,12 +67,12 @@ template <typename T>
 class ElementwiseMulMKLDNNKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& ctx) const override {
-    using LoDTensor = framework::LoDTensor;
+    using Tensor = framework::Tensor;
 
     int axis = ctx.Attr<int>("axis");
-    auto* x = ctx.Input<LoDTensor>("X");
-    auto* y = ctx.Input<LoDTensor>("Y");
-    auto* z = ctx.Output<LoDTensor>("Out");
+    auto* x = ctx.Input<Tensor>("X");
+    auto* y = ctx.Input<Tensor>("Y");
+    auto* z = ctx.Output<Tensor>("Out");
     const T* x_data = x->data<T>();
     const T* y_data = y->data<T>();
 
@@ -82,12 +81,11 @@ class ElementwiseMulMKLDNNKernel : public framework::OpKernel<T> {
     auto x_int_dims = paddle::framework::vectorize2int(x_dims);
 
     z->Resize(x_dims);
-    z->set_lod(x->lod());
-    z->set_layout(x->layout());
+    ctx.ShareLoD("X", "Out");
     T* z_data = z->mutable_data<T>(ctx.GetPlace());
 
-    UpdateDataFormat(ctx, const_cast<LoDTensor*>(x), "x_data_format");
-    UpdateDataFormat(ctx, const_cast<LoDTensor*>(y), "y_data_format");
+    UpdateDataFormat(ctx, const_cast<Tensor*>(x), "x_data_format");
+    UpdateDataFormat(ctx, const_cast<Tensor*>(y), "y_data_format");
 
     const bool is_avx512_enabled = platform::MayIUse(platform::avx512f);
     const bool are_dims_divisable = !(x_int_dims[1] % 16);
@@ -149,11 +147,11 @@ class ElementwiseMulMKLDNNKernel : public framework::OpKernel<T> {
         auto& dev_ctx = ctx.template device_context<MKLDNNDeviceContext>();
         const auto& mkldnn_engine = dev_ctx.GetEngine();
         if (!(is_x_nchw || is_x_nc || is_x_x))
-          ReorderInput<T>(const_cast<LoDTensor*>(x), ctx.GetPlace(),
-                          mkldnn_engine, x->dims().size() == 4);
+          ReorderInput<T>(const_cast<Tensor*>(x), ctx.GetPlace(), mkldnn_engine,
+                          x->dims().size() == 4);
         if (!(is_y_nchw || is_y_nc || is_y_x))
-          ReorderInput<T>(const_cast<LoDTensor*>(y), ctx.GetPlace(),
-                          mkldnn_engine, y->dims().size() == 4);
+          ReorderInput<T>(const_cast<Tensor*>(y), ctx.GetPlace(), mkldnn_engine,
+                          y->dims().size() == 4);
       }
 
       auto mul_func = [](T a, T b) -> T { return a * b; };

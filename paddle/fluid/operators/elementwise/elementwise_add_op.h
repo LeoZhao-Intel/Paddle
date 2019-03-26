@@ -70,8 +70,7 @@ class ElementwiseAddKernel : public framework::OpKernel<T> {
     auto *z = ctx.Output<framework::LoDTensor>("Out");
 
     z->Resize(x->dims());
-    z->set_lod(x->lod());
-    z->set_layout(x->layout());
+    ctx.ShareLoD("X", "Out");
     z->mutable_data<T>(ctx.GetPlace());
 
     auto dims_equal = x->dims() == y->dims();

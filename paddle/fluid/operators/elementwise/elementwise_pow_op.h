@@ -29,15 +29,14 @@ template <typename DeviceContext, typename T>
 class ElementwisePowKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& ctx) const override {
-    using LoDTensor = framework::LoDTensor;
+    using Tensor = framework::Tensor;
 
-    auto* x = ctx.Input<LoDTensor>("X");
-    auto* y = ctx.Input<LoDTensor>("Y");
-    auto* z = ctx.Output<LoDTensor>("Out");
+    auto* x = ctx.Input<Tensor>("X");
+    auto* y = ctx.Input<Tensor>("Y");
+    auto* z = ctx.Output<Tensor>("Out");
 
     z->Resize(x->dims());
-    z->set_lod(x->lod());
-    z->set_layout(x->layout());
+    ctx.ShareLoD("X", "Out");
     z->mutable_data<T>(ctx.GetPlace());
     int axis = ctx.Attr<int>("axis");
     ElementwiseComputeEx<PowFunctor<T>, DeviceContext, T>(ctx, x, y, axis,

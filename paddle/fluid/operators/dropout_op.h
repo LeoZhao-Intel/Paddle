@@ -23,7 +23,6 @@ namespace paddle {
 namespace operators {
 
 using Tensor = framework::Tensor;
-using LoDTensor = framework::LoDTensor;
 template <typename T, int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
 using EigenMatrix = framework::EigenMatrix<T, MajorType, IndexType>;
@@ -32,13 +31,12 @@ template <typename DeviceContext, typename T>
 class CPUDropoutKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& context) const override {
-    auto* x = context.Input<LoDTensor>("X");
-    auto* y = context.Output<LoDTensor>("Out");
+    auto* x = context.Input<Tensor>("X");
+    auto* y = context.Output<Tensor>("Out");
     const auto* x_data = x->data<T>();
 
     y->Resize(x->dims());
-    y->set_lod(x->lod());
-    y->set_layout(x->layout());
+    context.ShareLoD("X", "Out");
     auto* y_data = y->mutable_data<T>(context.GetPlace());
     float dropout_prob = context.Attr<float>("dropout_prob");
 

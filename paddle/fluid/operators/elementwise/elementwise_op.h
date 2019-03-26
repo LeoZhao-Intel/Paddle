@@ -33,7 +33,6 @@ class ElementwiseOp : public framework::OperatorWithKernel {
   using framework::OperatorWithKernel::OperatorWithKernel;
 
   using Tensor = framework::Tensor;
-  using LoDTensor = framework::LoDTensor;
 
   void InferShape(framework::InferShapeContext *ctx) const override {
     PADDLE_ENFORCE(ctx->HasInput("X"),

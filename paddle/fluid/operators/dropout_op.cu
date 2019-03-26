@@ -66,11 +66,10 @@ template <typename Place, typename T>
 class GPUDropoutKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext& context) const override {
-    auto* x = context.Input<LoDTensor>("X");
-    auto* y = context.Output<LoDTensor>("Out");
+    auto* x = context.Input<Tensor>("X");
+    auto* y = context.Output<Tensor>("Out");
     y->Resize(x->dims());
-    y->set_lod(x->lod());
-    y->set_layout(x->layout());
+    context.ShareLOD("X", "Out");
     y->mutable_data<T>(context.GetPlace());
     float dropout_prob = context.Attr<float>("dropout_prob");
 
